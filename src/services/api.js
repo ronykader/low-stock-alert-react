@@ -1,3 +1,4 @@
+// src/services/api.js
 import axios from 'axios';
 import { getSessionToken } from '@shopify/app-bridge/utilities';
 import { createApp } from '@shopify/app-bridge';
@@ -18,9 +19,24 @@ class EnvironmentConfig {
   static getShopifyApiKey() {
     return import.meta.env.VITE_SHOPIFY_API_KEY;
   }
+
+  static logEnvironment() {
+    console.group('🌍 Environment Configuration');
+    console.log('Mode:', import.meta.env.MODE);
+    console.log('Production:', this.isProduction());
+    console.log('Development:', this.isDevelopment());
+    console.log('API Base URL:', this.getApiBaseUrl());
+    console.log('Hostname:', window.location.hostname);
+    console.log('Shopify API Key Present:', !!this.getShopifyApiKey());
+    console.groupEnd();
+  }
+
+  static isDevelopment() {
+    return import.meta.env.DEV || window.location.hostname === 'localhost';
+  }
 }
 
-// Enhanced Shopify App Configuration
+// Shopify App Configuration
 class ShopifyAppConfig {
   static getShopDomain() {
     const params = new URLSearchParams(window.location.search);
@@ -48,14 +64,14 @@ class ShopifyAppConfig {
   }
 }
 
-// App Bridge Service with Better Error Handling
+// App Bridge Service
 class AppBridgeService {
   static instance = null;
 
   static getInstance() {
     if (this.instance) return this.instance;
 
-    const { shop, host, isEmbedded } = ShopifyAppConfig.logContext();
+    const { shop, host } = ShopifyAppConfig.validateAppContext();
     const apiKey = EnvironmentConfig.getShopifyApiKey();
 
     if (!apiKey) {
@@ -65,7 +81,6 @@ class AppBridgeService {
 
     if (!shop || !host) {
       console.warn('⚠️ Cannot initialize App Bridge: Missing shop or host parameters');
-      console.warn('💡 Access your app through Shopify Admin: https://your-store.myshopify.com/admin/apps/your-app');
       return null;
     }
 
@@ -100,7 +115,7 @@ class AppBridgeService {
   }
 }
 
-// API Service with Production Fallbacks
+// API Service
 class ApiService {
   constructor() {
     this.client = axios.create({
@@ -115,24 +130,20 @@ class ApiService {
   }
 
   setupInterceptors() {
-    // Request Interceptor
     this.client.interceptors.request.use(
       async (config) => {
         const shop = ShopifyAppConfig.getShopDomain();
         
-        // Always add shop header if available
         if (shop) {
           config.headers['X-Shopify-Shop-Domain'] = shop;
         }
 
-        // Try to get session token, but don't block if it fails
         if (shop && !config.url?.includes('/public')) {
           try {
             const token = await AppBridgeService.getSessionToken();
             config.headers['Authorization'] = `Bearer ${token}`;
           } catch (error) {
             console.warn('⚠️ Proceeding without session token');
-            // Continue without token - backend should handle this
           }
         }
 
@@ -145,37 +156,25 @@ class ApiService {
       }
     );
 
-    // Response Interceptor
     this.client.interceptors.response.use(
       (response) => {
         console.log(`✅ ${response.status} ${response.config.url}`);
         return response;
       },
       (error) => {
-        // Enhanced error logging
         if (error.response) {
-          // Server responded with error status
-          console.error(`❌ ${error.response.status} ${error.config?.url}:`, {
-            data: error.response.data,
-            message: error.response.data?.message || error.message
-          });
+          console.error(`❌ ${error.response.status} ${error.config?.url}:`, error.response.data);
         } else if (error.request) {
-          // Request made but no response received
-          console.error('❌ No response received:', {
-            url: error.config?.url,
-            message: error.message
-          });
+          console.error('❌ No response received:', error.config?.url);
         } else {
-          // Something else happened
           console.error('❌ Request error:', error.message);
         }
-
         return Promise.reject(error);
       }
     );
   }
 
-  // Store operations
+  // API methods
   getStore() {
     return this.client.get('/store');
   }
@@ -204,12 +203,19 @@ class ApiService {
     return this.client.get(`/dashboard/trend?days=${days}`);
   }
 
-  // Public health check
   healthCheck() {
     return this.client.get('/health');
   }
 }
 
-// Export the service
-export const apiService = new ApiService();
+// Create and export the service instance
+const apiService = new ApiService();
+
+// Export everything that should be available to other files
+export { 
+  EnvironmentConfig, 
+  ShopifyAppConfig, 
+  AppBridgeService 
+};
+
 export default apiService;

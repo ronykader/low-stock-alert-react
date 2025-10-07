@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from '@shopify/polaris';
 import { Provider as AppBridgeProvider } from '@shopify/app-bridge-react';
@@ -25,14 +26,15 @@ export default function App() {
     });
   }, []);
 
-  // Get shop and host using the same method as your API service
-  const { shop, host } = ShopifyAppConfig.validateAppContext();
+  // Get shop and host using the validated context
+  const shop = appContext?.shop;
+  const host = appContext?.host;
 
-  // App Bridge configuration - MUST match your API service
+  // App Bridge configuration
   const config = {
     apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
     host: host,
-    forceRedirect: false, // Changed to false for better debugging
+    forceRedirect: false,
   };
 
   // Show loading state
@@ -82,11 +84,6 @@ export default function App() {
         </div>
       </AppProvider>
     );
-  }
-
-  // If no host parameter (but we have shop), show warning but continue
-  if (!host) {
-    console.warn('⚠️ Host parameter missing - App Bridge may not work correctly');
   }
 
   console.log('🚀 Starting App with config:', {
