@@ -6,13 +6,13 @@ import '@shopify/polaris/build/esm/styles.css';
 import Dashboard from './pages/Dashboard';
 import SetupWizard from './pages/SetupWizard';
 import { useEffect } from 'react';
+import { EnvironmentConfig, ShopifyAppConfig } from './services/api';
 
 export default function App() {
+
     useEffect(() => {
-  if (window.parent) {
-    const parentOrigin = document.referrer || "*"; // referrer is usually Shopify admin origin
-    window.parent.postMessage({ type: "APP_LOADED" }, parentOrigin);
-  }
+  EnvironmentConfig.logEnvironment();
+  ShopifyAppConfig.validateAppContext();
 }, []);
 
     // Get shop domain and host from URL parameters
