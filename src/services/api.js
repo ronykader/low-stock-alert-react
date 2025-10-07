@@ -208,14 +208,16 @@ class ApiService {
   }
 }
 
-// Create and export the service instance
+// Create instance
 const apiService = new ApiService();
 
-// Export everything that should be available to other files
+// Export everything properly
 export { 
   EnvironmentConfig, 
   ShopifyAppConfig, 
-  AppBridgeService 
+  AppBridgeService,
+  apiService  // Add this line to export apiService as named export
 };
 
+// Also export as default for backward compatibility
 export default apiService;
