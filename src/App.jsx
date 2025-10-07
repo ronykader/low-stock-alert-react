@@ -1,47 +1,99 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from '@shopify/polaris';
 import { Provider as AppBridgeProvider } from '@shopify/app-bridge-react';
 import '@shopify/polaris/build/esm/styles.css';
 import Dashboard from './pages/Dashboard';
 import SetupWizard from './pages/SetupWizard';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { EnvironmentConfig, ShopifyAppConfig } from './services/api';
 
 export default function App() {
+  const [appContext, setAppContext] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-  EnvironmentConfig.logEnvironment();
-  ShopifyAppConfig.validateAppContext();
-}, []);
+  useEffect(() => {
+    // Check environment and Shopify context
+    EnvironmentConfig.logEnvironment();
+    const context = ShopifyAppConfig.validateAppContext();
+    setAppContext(context);
+    setLoading(false);
 
-    // Get shop domain and host from URL parameters
-  const params = new URLSearchParams(window.location.search);
-  const shop = params.get('shop');
-  const host = params.get('host');
+    console.log('🔧 App Configuration:', {
+      shop: context.shop,
+      host: context.host,
+      hasApiKey: !!import.meta.env.VITE_SHOPIFY_API_KEY
+    });
+  }, []);
 
-   // App Bridge configuration for Shopify authentication
+  // Get shop and host using the same method as your API service
+  const { shop, host } = ShopifyAppConfig.validateAppContext();
+
+  // App Bridge configuration - MUST match your API service
   const config = {
-    apiKey: import.meta.env.VITE_SHOPIFY_API_KEY || 'your_api_key_here',
-    host: host || (shop ? btoa(`${shop}/admin`) : ''),
-    forceRedirect: true,
+    apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
+    host: host,
+    forceRedirect: false, // Changed to false for better debugging
   };
 
-  // If no shop parameter, show error (app must be accessed through Shopify)
+  // Show loading state
+  if (loading) {
+    return (
+      <AppProvider i18n={{}}>
+        <div style={{ padding: '40px', textAlign: 'center' }}>
+          <h1>Loading App...</h1>
+          <p>Checking Shopify configuration...</p>
+        </div>
+      </AppProvider>
+    );
+  }
+
+  // If no shop parameter, show error
   if (!shop) {
     return (
-      <AppProvider i18n={{}} config={config}>
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <h1>⚠️ Invalid Access</h1>
-          <p>This app must be accessed through Shopify Admin.</p>
+      <AppProvider i18n={{}}>
+        <div style={{ 
+          padding: '40px', 
+          textAlign: 'center',
+          maxWidth: '600px',
+          margin: '50px auto',
+          border: '1px solid #e1e5e9',
+          borderRadius: '8px'
+        }}>
+          <h1>⚠️ App Not Properly Loaded</h1>
+          <p>This app must be accessed through the Shopify Admin.</p>
+          <div style={{ 
+            background: '#f6f6f7', 
+            padding: '15px', 
+            borderRadius: '4px', 
+            margin: '20px 0',
+            textAlign: 'left',
+            fontSize: '14px'
+          }}>
+            <p><strong>How to access correctly:</strong></p>
+            <ol style={{ textAlign: 'left', paddingLeft: '20px' }}>
+              <li>Install the app from the Shopify App Store</li>
+              <li>Open your Shopify Admin</li>
+              <li>Click on the app from your Apps list</li>
+            </ol>
+          </div>
           <p style={{ fontSize: '14px', color: '#637381', marginTop: '20px' }}>
-            Please install the app from your Shopify store.
+            Current URL: {window.location.href}
           </p>
         </div>
       </AppProvider>
     );
   }
 
+  // If no host parameter (but we have shop), show warning but continue
+  if (!host) {
+    console.warn('⚠️ Host parameter missing - App Bridge may not work correctly');
+  }
+
+  console.log('🚀 Starting App with config:', {
+    shop,
+    host: host ? `${host.substring(0, 20)}...` : 'missing',
+    apiKey: import.meta.env.VITE_SHOPIFY_API_KEY ? 'present' : 'missing'
+  });
 
   return (
     <AppBridgeProvider config={config}>
