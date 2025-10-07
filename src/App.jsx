@@ -9,9 +9,11 @@ import { useEffect } from 'react';
 
 export default function App() {
     useEffect(() => {
-    // Send message to Shopify admin once when the app loads
-    window.parent.postMessage({ type: "APP_LOADED" }, "https://admin.shopify.com");
-  }, []); // empty dependency = runs only once
+  if (window.parent) {
+    const parentOrigin = document.referrer || "*"; // referrer is usually Shopify admin origin
+    window.parent.postMessage({ type: "APP_LOADED" }, parentOrigin);
+  }
+}, []);
 
     // Get shop domain and host from URL parameters
   const params = new URLSearchParams(window.location.search);
