@@ -63,6 +63,7 @@ export default function SetupWizard() {
       
       // Redirect to dashboard with shop and host parameters
       const params = new URLSearchParams(window.location.search);
+      console.log('Redirecting to dashboard with params:', params.toString());
       navigate(`/dashboard?${params.toString()}`);
     } catch (err) {
       console.error('Setup error:', err);
