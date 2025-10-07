@@ -7,6 +7,11 @@ import Dashboard from './pages/Dashboard';
 import SetupWizard from './pages/SetupWizard';
 
 export default function App() {
+    useEffect(() => {
+    // Send message to Shopify admin once when the app loads
+    window.parent.postMessage({ type: "APP_LOADED" }, "https://admin.shopify.com");
+  }, []); // empty dependency = runs only once
+
     // Get shop domain and host from URL parameters
   const params = new URLSearchParams(window.location.search);
   const shop = params.get('shop');
