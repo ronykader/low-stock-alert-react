@@ -5,6 +5,7 @@ import { Provider as AppBridgeProvider } from '@shopify/app-bridge-react';
 import '@shopify/polaris/build/esm/styles.css';
 import Dashboard from './pages/Dashboard';
 import SetupWizard from './pages/SetupWizard';
+import { useEffect } from 'react';
 
 export default function App() {
     useEffect(() => {
