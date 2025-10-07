@@ -22,13 +22,13 @@ export default function App() {
   const config = {
     apiKey: import.meta.env.VITE_SHOPIFY_API_KEY || 'your_api_key_here',
     host: host || (shop ? btoa(`${shop}/admin`) : ''),
-    forceRedirect: false,
+    forceRedirect: true,
   };
 
   // If no shop parameter, show error (app must be accessed through Shopify)
   if (!shop) {
     return (
-      <AppProvider i18n={{}}>
+      <AppProvider i18n={{}} config={config}>
         <div style={{ padding: '40px', textAlign: 'center' }}>
           <h1>⚠️ Invalid Access</h1>
           <p>This app must be accessed through Shopify Admin.</p>
