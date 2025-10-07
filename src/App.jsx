@@ -22,7 +22,7 @@ export default function App() {
   const config = {
     apiKey: import.meta.env.VITE_SHOPIFY_API_KEY || 'your_api_key_here',
     host: host || (shop ? btoa(`${shop}/admin`) : ''),
-    forceRedirect: true,
+    forceRedirect: false,
   };
 
   // If no shop parameter, show error (app must be accessed through Shopify)
